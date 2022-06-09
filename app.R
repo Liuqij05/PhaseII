@@ -60,6 +60,9 @@ ui <- fluidPage(
     # Output 
     mainPanel(
       
+          # Output 
+    mainPanel(
+      
       # Output: Tabset w/ results, documentation and example
       tabsetPanel(type = "tabs",
                   
@@ -67,8 +70,7 @@ ui <- fluidPage(
                            h3("Fleming’s Single-Stage Design"),
                            checkboxInput("checkbox", "Show All Output", F), 
                            dataTableOutput("table1"),
-                           em("n: is the total sample size of participents.
-                              r: bound for concluding H0."),
+                           em(textOutput(outputId = "caption")),
                            
                            hr(),
                            
@@ -89,7 +91,6 @@ ui <- fluidPage(
                   
                   tabPanel("Reference", 
                            verbatimTextOutput("info"),
-                           
  
                            #Reference
                            h5("Reference"),
@@ -99,49 +100,104 @@ ui <- fluidPage(
                            hr(),
                            
                            #Link
-                           tags$a(href='file/phase-II.html', 
+                           tags$a(href='www/phaseII.html', 
                                  target='blank', 
                                  'More Information')
                           
                           ), 
                   
-                 
       )
     )
   )
 )
 
 
-# Server ------------------------------------------------------------------
+# Server -----------------------------------------------------------------------------------
 server <- function(input, output) {
-
-#fleming output  
-  flem <- reactive({  
-    
-    fleming <- fleming1stage(
-      p0 = input$p0,
-      pa = input$p1,
-      alpha = input$Alpha,
-      beta = 1 - input$Power
-    ) 
-    fleming[1, c(3:2), ]
-  })
   
-  output$table1 <- renderDataTable({
-    fun1 <- flem()
-    fun1
-  }, 
-  colnames = c('r', 'n'),
-  extensions = "ColReorder",
-  options = list(
-    initComplete = JS(
-    "function(settings, json){",
-    "$(this.api().table().header()).css({'background-color': '#87CEEB', 'color': '#000000'});",
-    "}"),
-    dom = 't',
-    ordering = F), 
-  rownames= F
- )
+  
+  #Fleming output   
+  observe({
+
+    
+  if(input$checkbox){
+    
+    
+    flem1 <- reactive({  
+      
+      fleming <- fleming1stage(
+        p0 = input$p0,
+        pa = input$p1,
+        alpha = input$Alpha,
+        beta = 1 - input$Power
+      ) 
+      colnames(fleming)[2] <- "n"
+      fleming[,c(3:2, 4:8)]
+    })
+    
+    output$table1 <- renderDataTable({
+      fun1 <- flem1()
+      fun1
+    }, 
+    extensions = "ColReorder",
+    options = list(
+      initComplete = JS(
+        "function(settings, json){",
+        "$(this.api().table().header()).css({'background-color': '#87CEEB', 'color': '#000000'});",
+        "}"),
+      dom = 't',
+      ordering = F), 
+    rownames= F
+    )
+    
+    #Caption of Fleming output 
+    output$caption <- renderText({ "n: is the total sample size of participents.
+      r: bound for concluding H0.
+      eff: (r+1)/n (Reject H0 if number of patients who experience a response is larger than r+1).
+      CI lower limit: exact 1-2*alpha confidence interval lower limit of eff.
+      CI upper limit: exact 1-2*alpha confidence interval upper limit of eff.
+      alpha: the actual alpha value which is smaller than alpha_param.
+      beta: the actual beta value where which is smaller than beta_param." })
+    
+    
+  }else{
+    
+    
+    flem <- reactive({  
+      
+      fleming <- fleming1stage(
+        p0 = input$p0,
+        pa = input$p1,
+        alpha = input$Alpha,
+        beta = 1 - input$Power
+      ) 
+      fleming[, c(3:2)]
+    })
+    
+    output$table1 <- renderDataTable({
+      fun1 <- flem()
+      fun1
+    }, 
+    colnames = c('r', 'n'),
+    extensions = "ColReorder",
+    options = list(
+      initComplete = JS(
+        "function(settings, json){",
+        "$(this.api().table().header()).css({'background-color': '#87CEEB', 'color': '#000000'});",
+        "}"),
+      dom = 't',
+      ordering = F), 
+    rownames= F
+    )
+    
+    #Caption of Fleming output 
+    output$caption <- renderText({ "n: is the total sample size of participents. 
+      r: bound for concluding H0. " })
+    
+    }
+  })
+
+    
   
 #Simon output  
   output$table2 <- renderDataTable({
@@ -187,7 +243,7 @@ server <- function(input, output) {
       fun$out[which.min(fun$out[, 5]), 1],
       "or fewer responses from these",
       fun$out[which.min(fun$out[, 5]), 2],
-      "participants, the trail will end. If not, go to the second stage, where",
+      "participants, the trial will end. If not, go to the second stage, where",
       (fun$out[which.min(fun$out[, 5]), 4] - fun$out[which.min(fun$out[, 5]), 2]),
       "additional participants will be accrued for a total sample size of",
       fun$out[which.min(fun$out[, 5]), 4],

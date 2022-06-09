@@ -97,7 +97,7 @@ ui <- fluidPage(
                            hr(),
                            
                            #Link
-                           a(href='www/phaseII.html', 
+                           a(href='500proj.html', 
                                  target='blank', 
                                  'More Information')
    

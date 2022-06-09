@@ -6,7 +6,7 @@ library(DT)
 library(shinyWidgets)
 library(shinyjs)
 
-# UI ---------------------------------------------------------------------------------------------------------------------------------------
+# UI -------------------------------------------------------------------------------------
 
 ui <- fluidPage(
   
@@ -50,7 +50,7 @@ ui <- fluidPage(
                    value = 0.15),
       
       numericInput('nmax', 
-                   'Maximum total sample size, Nmax (Simon II stage design: default 100)', 
+                   'Maximum total sample size, Nmax (Simon II stage design: default 100; can be at most 500)', 
                    min = 0,
                    max = 500,
                    step = 1,
@@ -58,9 +58,6 @@ ui <- fluidPage(
     ),
     
     # Output 
-    mainPanel(
-      
-          # Output 
     mainPanel(
       
       # Output: Tabset w/ results, documentation and example
@@ -112,7 +109,7 @@ ui <- fluidPage(
 )
 
 
-# Server -------------------------------------------------------------------------------------------------------------------------------------
+# Server -----------------------------------------------------------------------------------
 server <- function(input, output) {
   
   

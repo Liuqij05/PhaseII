@@ -98,7 +98,7 @@ ui <- fluidPage(
                            
                            #Link
                            tags$a(href='www/phaseII.html', 
-                                 target='_self', 
+                                 target='blank', 
                                  'More Information')
    
                           )

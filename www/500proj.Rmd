@@ -9,7 +9,10 @@ output:
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
 
-library(PhIIdesign)
+#Install the latest version of "PhIIdesign" package by entering the following in R:
+#install.packages("remotes")
+#remotes::install_github("IDDI-BE/PhIIdesign")
+
 pacman::p_load(
   clinfun,      
   PhIIdesign)

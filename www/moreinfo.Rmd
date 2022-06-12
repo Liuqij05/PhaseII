@@ -1,0 +1,152 @@
+---
+title: "" 
+output: 
+  html_document:
+    theme: paper
+    highlight: tango
+---
+ 
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+#library(shiny)
+#runGitHub("PhaseII", "Liuqij05")
+
+#Install the latest version of "PhIIdesign" package by entering the following in R:
+#install.packages("remotes")
+#remotes::install_github("IDDI-BE/PhIIdesign")
+
+pacman::p_load(
+  clinfun,      
+  PhIIdesign)
+```
+
+## Single-arm Phase II Clinical Trial
+
+##### Qijia Liu
+
+<br/>   
+
+#### Introduction
+
+The purpose of a Phase II clinical trial is to evaluate the efficacy of potential new treatments and to determine which ones warrant further research. Due to budget constraints, the sample size is small. Hence, formal hypothesis testing is not the goal. Typically, the study design is only one arm and no comparison group. This project introduces Fleming's Single-stage Design and Simon's Two-stage Design, then compares the R output of these two designs with PASS to see if these two programs employ the same sample size calculation method.
+ 
+<br/>   
+
+#### Statistical setup for both design
+
+**Endpoint:** Binary endpoints, ex: Tumor response: yes/no.
+
+**Hypothesis:**
+
+H0: $p \le p_0$ vs. Ha: $p = p_1$
+
+* $p_0$ is a predetermined undesirable level. 
+* $p_1$ is some desirable level that worth developing further.
+      
+**Type I and type II errors:** $\alpha$ and $\beta$.
+
+<br/>   
+
+#### Fleming’s Single-stage Design
+
+**Single stage design:**  
+
+The single-stage procedure can be based upon the statistic $\hat{p} = x/n$, by rejecting H0 whenever $\hat{p}$ is large or $x \ge [N_{p_0} + Z_{1-\alpha}\sqrt{N_{p_0}(1 - p_0)}]^* + 1.$ The decision is therefore "Go" for a phase III study. However, “Not Go” to a phase III trial if $x \le [N_{p_0} + Z_{1-\alpha}\sqrt{N_{p_0}(1 - p_0)}]^*$, concluding H0. 
+
+* x: the number of responses observed in n patients.       
+* n: the total sample size.    
+* r: bound for concluding H0, which equals $[N_{p_0} + Z_{1-\alpha}\sqrt{N_{p_0}(1 - p_0)}]^*$.     
+
+```{r}
+#eps: tolerance default value = 0.005
+
+#P0 = 0.1, P1 = 0.25 Targets: Alpha = 0.05, Power = 0.8
+fleming1stage(0.1, 0.25, 0.05, 0.2)
+#Example 2 in Pass: P0 = 0.05, P1 = 0.25 Targets: Alpha = 0.1, Power = 0.9
+fleming1stage(0.05, 0.25, 0.1, 0.1)
+#Example 3a in Pass: P0 = 0.7, P1 = 0.9 Targets: Alpha = 0.05, Power = 0.8
+fleming1stage(0.7, 0.9, 0.05, 0.2)
+fleming1stage(0.7, 0.9, 0.05, 0.2, eps =0.001)
+
+```
+
+<br/>   
+
+#### Simon’s Two-stage Design
+
+**Two stages design:**  
+
+Stage 1: Enroll and observe n1 patients, we will terminate the experiment early and reject drug or treatment if r1 or fewer responses are observed at stage 1. Otherwise, proceed to stage 2.
+
+Stage 2: Enroll and observe n2 patients. Conclude H0 if r or fewer responses are observed among n patients(r > r1). otherwise, conclude Ha.
+
+* n1: sample size for the first stage of accrual.      
+* n2: sample size for the second stage of accrual.        
+* n = n1 + n2, is the total sample size after the completion of second stage.        
+* r1: bound for stopping at stage 1 (concluding H0).    
+* r: bound for concluding H0 at stage 2.     
+
+**Probability of early termination(PET):**
+
+PET = B($r_1; p, n_1$)
+
+where B denotes the cumulative binomial distribution. PET is the probability of an early trial termination at stage I given $p = p_1.$
+
+**Expected samples size:**
+
+EN = n1 + (1-PET)$n_2$ 
+
+**Probability of not recommending:**
+
+If the treatment is inactive, the trial will stop early. The probability of not recommending the treatment is:
+
+PNC = B($r_1; p, n_1$) + $\sum_{x = r_1 + 1}^{min[n_1, r]} b(x; p, n_1) B(r-x; p, n_2)$
+
+where x denotes the observed responses from stage 1, and r-x denotes the responses from stage 2.
+
+**Two types of errors:**
+
+Type I errors: $\alpha = 1 - PNC(p_0)$
+
+Type II errors: $\beta = 1 - PNC(p_1)$
+
+
+**Two criterias:**
+
+* Optimal Design
+
+For each value of total sample size n and each value of n1 in the interval (1, n - 1), we found the integer values of r1 and r that met the two constraints and minimized the expected sample size EN when p = p0. This was obtained by a search across the range r1 in (0, n1). We computed the maximum value of r that satisfies the type II error rate for each value of r1. Then, we evaluate if these parameters (n, n1, r1, and r) meet the type I error rate. If it did, we compared the expected sample size EN to the minimum sample size obtained by previous feasible designs and continued the search over r1. Keeping n fixed, we searched the range of n1 between (1, n-1) for the optimal two-stage design for this maximum sample size n.
+
+* Minimax Design
+
+Only check against the constraints imposed by the two types of errors and find smallest total maximum sample size n first but skip checking for EN. 
+
+**Comparing the two criterias:** When conducting a two-stage phase II trial, we usually wonder which criterion (Minimax design versus Optimal design) to select. The optimal design is, by definition, to stop the trial early if the treatment does not appear to be effective based on response rate from first stage, without regard for the necessary maximum sample size. Therefore, the optimal design may be used if the maximum sample size is of little importance and if H0 is true is the research priority. Though, we need also consider the maximum sample size required for a phase II two-stage study. 
+
+```{r}
+#P0 = 0.1, P1 = 0.25 Targets: Alpha = 0.05, Power = 0.8
+ph2simon(0.1, 0.25, 0.05, 0.2)
+#Example 2 in Pass: P0 = 0.05, P1 = 0.25 Targets: Alpha = 0.1, Power = 0.9
+ph2simon(0.05, 0.25, 0.1, 0.1)
+#Example 3a in Pass: P0 = 0.7, P1 = 0.9 Targets: Alpha = 0.05, Power = 0.8
+ph2simon(0.7, 0.9, 0.05, 0.2)
+
+```
+
+<br/>   
+     
+> Comparing the R output with PASS: Comparing the R output of both Fleming’s Single-stage Design and Simon’s Two-stage design to Examples 1 and 2 in the PASS documentation yielded identical results. However, we must adjust the eps value (default is 0.05) to 0.001 in the R function of Fleming's Single-stage Design in order to obtain the same results as PASS; for Example 3b, we cannot set the "total sample size n Search Range" due to the limitation of the R function of Simon's two-stage design, so the results differ from those of PASS.
+    
+<br/>         
+    
+**Reference:** 
+
+PASS documentation: [Two-Stage Designs for Tests of One
+Proportion (Simon)](https://ncss-wpengine.netdna-ssl.com/wp-content/themes/ncss/pdf/Procedures/PASS/Two-Stage_Designs_for_Tests_of_One_Proportion-Simon.pdf)
+
+Simon R (1989). Optimal two-stage designs for phase II clinical trials, Controlled Clinical Trials 10: 1-10.        
+  
+Fleming TR (1982). One sample multiple testing procedure for phase II clinical trials, Biometrics 38: 143-151.
+
+
